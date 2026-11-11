@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#10243a">
+<title>Air Injection | O₂ Lookup</title>
+<style>
+:root{--navy:#10243a;--navy2:#183b59;--blue:#2474a6;--cyan:#5bc0be;--ink:#172b3a;--muted:#667987;--line:#dce5eb;--bg:#f3f6f8;--white:#fff;--green:#e4f3eb;--amber:#fff1d6;--red:#fde5e3;--shadow:0 12px 32px rgba(16,36,58,.08)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+header{background:linear-gradient(120deg,var(--navy),var(--navy2));color:#fff;padding:28px max(22px,calc((100vw - 1180px)/2)) 26px}
+.topline{display:flex;align-items:center;gap:10px;color:#a9c7d9;font-size:12px;letter-spacing:.13em;text-transform:uppercase;font-weight:700}
+.mark{width:30px;height:30px;border-radius:9px;background:#ffffff18;display:grid;place-items:center;color:#8ee0d8;font-size:17px}
+h1{font-size:clamp(25px,4vw,36px);line-height:1.12;margin:15px 0 8px;letter-spacing:-.035em}
+header p{margin:0;color:#c1d1dd;max-width:740px}
+main{max-width:1180px;margin:24px auto 56px;padding:0 20px}
+.tabs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.tab{border:1px solid var(--line);background:#fff;color:#496071;padding:10px 15px;border-radius:10px;font-weight:650;cursor:pointer}
+.tab.active{background:var(--navy);border-color:var(--navy);color:#fff}
+.panel{display:none}.panel.active{display:block}
+.card{background:var(--white);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:22px;margin-bottom:18px}
+.card h2{font-size:18px;margin:0 0 5px;letter-spacing:-.02em}
+.sub{color:var(--muted);font-size:13px;margin:0 0 18px}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+label{display:block;font-size:12px;font-weight:700;color:#526777;margin-bottom:7px}
+select,input{width:100%;height:44px;border:1px solid #cbd7df;border-radius:9px;padding:0 12px;background:#fff;color:var(--ink);font:inherit;outline:none}
+select:focus,input:focus{border-color:var(--blue);box-shadow:0 0 0 3px #2474a61b}
+.result{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:12px;margin-top:18px}
+.metric{border-radius:13px;padding:16px;background:#f4f8fa;border:1px solid #e2ebf0}
+.metric.primary{background:var(--navy);color:#fff;border-color:var(--navy)}
+.metric .k{font-size:11px;text-transform:uppercase;letter-spacing:.09em;font-weight:750;opacity:.72}
+.metric .v{font-size:clamp(24px,4vw,34px);font-weight:780;letter-spacing:-.04em;margin-top:3px;font-variant-numeric:tabular-nums}
+.metric .u{font-size:12px;opacity:.72}
+.formula{background:#f7f9fb;border:1px dashed #cbd8e1;border-radius:10px;padding:13px 15px;font-size:13px;color:#506474;margin-top:15px;overflow-wrap:anywhere}
+.toolbar{display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin-bottom:14px}
+.toolbar>div{min-width:150px;flex:1}
+button{border:0;border-radius:9px;background:var(--blue);color:white;padding:11px 15px;font:inherit;font-weight:700;cursor:pointer}
+button.secondary{background:#eaf1f5;color:#29475c}
+.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;min-width:660px;background:#fff;font-size:13px}
+th{background:var(--navy2);color:#fff;text-align:center;padding:11px 10px;white-space:nowrap;position:sticky;top:0}
+td{padding:10px;text-align:center;border-bottom:1px solid #e8eef2;font-variant-numeric:tabular-nums}
+td:first-child{font-weight:750;background:#f5f8fa}
+tr:last-child td{border-bottom:0}
+td.low{background:var(--green)}td.mid{background:var(--amber)}td.high{background:var(--red)}
+td.selected{outline:2px solid var(--blue);outline-offset:-2px;font-weight:800}
+.legend{display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:12px;margin:12px 0 0}
+.dot{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px}
+.note{border-left:4px solid #d6a342;background:#fff9ed;padding:13px 15px;border-radius:0 9px 9px 0;color:#655331;font-size:13px}
+.small{font-size:12px;color:var(--muted)}
+.hidden{display:none}
+@media(max-width:760px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.result{grid-template-columns:1fr 1fr}.metric.primary{grid-column:1/-1}header{padding-top:22px}}
+@media(max-width:430px){.grid{grid-template-columns:1fr 1fr;gap:10px}.card{padding:16px}.result{gap:8px}.metric{padding:13px}.metric .v{font-size:25px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="topline"><span class="mark">O₂</span> Process engineering utility</div>
+  <h1>Air Injection &amp; Oxygen Lookup</h1>
+  <p>Estimate the theoretical bulk-average oxygen concentration when air is injected into an initially nitrogen-filled, pressurised, closed system.</p>
+</header>
+<main>
+  <nav class="tabs" aria-label="Calculator sections">
+    <button class="tab active" data-tab="calculator">Quick calculator</button>
+    <button class="tab" data-tab="tables">O2 Conctable Lookup</button>
+    <button class="tab" data-tab="basis">Calculation basis</button>
+  </nav>
+
+  <section id="calculator" class="panel active">
+    <div class="card">
+      <h2>Operating conditions</h2>
+      <p class="sub">Choose a tabulated value or enter a custom value.</p>
+      <div class="grid">
+        <div><label for="flow">Air flowrate (Nm³/hr)</label><input id="flow" type="number" min="0" step="any" value="10"></div>
+        <div><label for="duration">Injection duration (minutes)</label><input id="duration" type="number" min="0" step="any" value="10"></div>
+        <div><label for="volume">System volume (m³)</label><input id="volume" type="number" min="0.000001" step="any" value="36"></div>
+        <div><label for="pressure">System pressure (bar(g))</label><input id="pressure" type="number" min="0" step="any" value="4"></div>
+      </div>
+      <div class="result" aria-live="polite">
+        <div class="metric primary"><div class="k">Final oxygen concentration</div><div class="v" id="o2">—</div><div class="u">vol% O₂</div></div>
+        <div class="metric"><div class="k">Equivalent concentration</div><div class="v" id="ppm">—</div><div class="u">ppmv O₂</div></div>
+        <div class="metric"><div class="k">Air introduced</div><div class="v" id="air">—</div><div class="u">Nm³</div></div>
+      </div>
+      <div class="formula" id="working"></div>
+    </div>
+    <div class="note"><strong>Important:</strong> This is a theoretical equilibrium estimate assuming no venting, leakage or gas withdrawal. It is not an inerting acceptance criterion or a substitute for a calibrated oxygen analyser.</div>
+  </section>
+
+  <section id="tables" class="panel">
+    <div class="card">
+      <h2>Steam-table-style lookup</h2>
+      <p class="sub">Select air flow and system volume. Rows show initial pressure; columns show injection duration. Cell values are final O₂ in vol%.</p>
+      <div class="toolbar">
+        <div><label for="tableFlow">Air flowrate (Nm³/hr)</label><select id="tableFlow"></select></div>
+        <div><label for="tableVolume">System volume (m³)</label><select id="tableVolume"></select></div>
+        <button class="secondary" id="download">Download current table (CSV)</button>
+      </div>
+      <div class="tablewrap"><table id="lookup"></table></div>
+      <div class="legend"><span><i class="dot" style="background:#e4f3eb"></i>Lower concentration</span><span><i class="dot" style="background:#fff1d6"></i>Intermediate</span><span><i class="dot" style="background:#fde5e3"></i>Higher concentration</span><span>Click any cell to load its conditions into Quick calculator.</span></div>
+    </div>
+    <div class="card">
+      <h2>All combinations</h2>
+      <p class="sub">The complete dataset contains 1,050 combinations (5 flowrates × 6 durations × 5 volumes × 7 pressures).</p>
+      <div class="toolbar">
+        <div><label for="allFlow">Air flowrate</label><select id="allFlow"></select></div>
+        <div><label for="allDuration">Duration</label><select id="allDuration"></select></div>
+        <div><label for="allVolume">System volume</label><select id="allVolume"></select></div>
+        <div><label for="allPressure">Pressure</label><select id="allPressure"></select></div>
+        <button id="showAll">Show selected combination</button>
+      </div>
+      <p class="small" id="allResult">Select values to calculate a combination.</p>
+    </div>
+  </section>
+
+  <section id="basis" class="panel">
+    <div class="card">
+      <h2>Calculation method &amp; assumptions</h2>
+      <p class="sub">Mole-balance calculation using ideal-gas inventory and normal-volume equivalence.</p>
+      <p><strong>Initial nitrogen inventory (Nm³ equivalent):</strong></p>
+      <div class="formula">N₂ inventory = V × (P<sub>g</sub> + P<sub>atm</sub>) / P<sub>atm</sub></div>
+      <p><strong>Air introduced:</strong></p>
+      <div class="formula">Air introduced = Q × t / 60</div>
+      <p><strong>Final oxygen concentration:</strong></p>
+      <div class="formula">O₂ (vol%) = 100 × [0.21 × Q × t / 60] ÷ [V × (P<sub>g</sub> + P<sub>atm</sub>) / P<sub>atm</sub> + Q × t / 60]</div>
+      <p class="small">Q = air flowrate (Nm³/hr); t = injection duration (minutes); V = system volume (m³); P<sub>g</sub> = initial gauge pressure (bar(g)); P<sub>atm</sub> = 1.01325 bar(a). Air oxygen content is taken as 21 vol%.</p>
+      <hr style="border:0;border-top:1px solid var(--line);margin:20px 0">
+      <ul>
+        <li>Initial gas is assumed to be pure nitrogen (0% O₂).</li>
+        <li>System volume is rigid and remains constant.</li>
+        <li>Pressure is the initial pressure before air injection.</li>
+        <li>Temperature is assumed constant; ideal-gas behaviour applies.</li>
+        <li>Complete mixing is assumed, with no venting, leakage, purge outlet or gas withdrawal.</li>
+        <li>Injected air increases system pressure.</li>
+      </ul>
+      <div class="note"><strong>Process-safety limitation:</strong> Actual oxygen distribution can be non-uniform, especially near the injection point. Do not use calculated values alone to authorise vessel entry, hydrocarbon introduction, inerting or purge completion. Follow approved site procedures and verify with a calibrated analyser at representative sampling points.</div>
+    </div>
+  </section>
+  <footer class="small" style="text-align:center;padding:12px">Air Injection O₂ Lookup · Engineering estimate · No data is transmitted or stored</footer>
+</main>
+<script>
+const flows=[0,5,10,15,20], durations=[5,10,15,20,30,60], volumes=[1,5,10,25,50], pressures=[1,2,3,4,5,6,7];
+const PATM=1.01325, AIR_O2=.21;
+const $=id=>document.getElementById(id);
+function calc(q,t,v,pg){
+  const air=q*t/60, n2=v*(pg+PATM)/PATM, o2in=air*AIR_O2;
+  const total=n2+air;
+  return {air,n2,o2in,percent:total?100*o2in/total:0,ppm:total?1e6*o2in/total:0};
+}
+function options(el,vals,selected){el.innerHTML=vals.map(v=>`<option value="${v}" ${String(v)===String(selected)?'selected':''}>${v}</option>`).join('')}
+function setup(){
+  $('flow').value=10; $('duration').value=10; $('volume').value=36; $('pressure').value=4;
+  options($('tableFlow'),flows,10); options($('tableVolume'),volumes,25);
+  options($('allFlow'),flows,10); options($('allDuration'),durations,10); options($('allVolume'),volumes,25); options($('allPressure'),pressures,4);
+}
+function update(){
+  const q=+$('flow').value,t=+$('duration').value,v=+$('volume').value,p=+$('pressure').value;
+  if (![$('flow').value,$('duration').value,$('volume').value,$('pressure').value].every(x=>x.trim()!=='' ) || ![q,t,v,p].every(Number.isFinite) || q<0 || t<0 || v<=0 || p<0) {
+    $('o2').textContent='—'; $('ppm').textContent='—'; $('air').textContent='—'; $('working').textContent='Enter valid values: flow, duration and pressure must be non-negative; system volume must be greater than zero.'; return;
+  }
+  const r=calc(q,t,v,p);
+  $('o2').textContent=r.percent.toFixed(4); $('ppm').textContent=Math.round(r.ppm).toLocaleString(); $('air').textContent=r.air.toFixed(3);
+  $('working').innerHTML=`Initial N₂ inventory = ${v} × (${p} + ${PATM}) / ${PATM} = <strong>${r.n2.toFixed(3)} Nm³</strong><br>O₂ introduced = ${r.air.toFixed(3)} × 21% = <strong>${r.o2in.toFixed(4)} Nm³</strong><br>Final O₂ = 100 × ${r.o2in.toFixed(4)} / (${r.n2.toFixed(3)} + ${r.air.toFixed(3)}) = <strong>${r.percent.toFixed(4)} vol%</strong>`;
+}
+function heatClass(x){return x<0.5?'low':x<2?'mid':'high'}
+function renderTable(){
+  const q=+$('tableFlow').value,v=+$('tableVolume').value;
+  let html='<thead><tr><th>Pressure<br>(bar(g))</th>'+durations.map(t=>`<th>${t} min</th>`).join('')+'</tr></thead><tbody>';
+  pressures.forEach(p=>{
+    html+=`<tr><td>${p}</td>`;
+    durations.forEach(t=>{const x=calc(q,t,v,p).percent;html+=`<td class="${heatClass(x)}" data-p="${p}" data-t="${t}" title="Click to load this condition">${x.toFixed(3)}</td>`});
+    html+='</tr>';
+  });
+  $('lookup').innerHTML=html+'</tbody>';
+  $('lookup').querySelectorAll('td[data-p]').forEach(td=>td.addEventListener('click',()=>{
+    $('flow').value=q;$('duration').value=td.dataset.t;$('volume').value=v;$('pressure').value=td.dataset.p;update();
+    document.querySelector('[data-tab="calculator"]').click();
+  }));
+}
+function csv(){
+ const q=+$('tableFlow').value,v=+$('tableVolume').value;
+ const rows=[['Air flowrate (Nm3/hr)',q],['System volume (m3)',v],[],['Pressure (bar(g))',...durations.map(t=>`${t} min O2 vol%`)]];
+ pressures.forEach(p=>rows.push([p,...durations.map(t=>calc(q,t,v,p).percent.toFixed(5))]));
+ const text=rows.map(row=>row.join(',')).join('\r\n');
+ const blob=new Blob([text],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download=`O2_lookup_flow-${q}_volume-${v}.csv`;a.click();URL.revokeObjectURL(url);
+}
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{
+ document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===b));
+ document.querySelectorAll('.panel').forEach(x=>x.classList.toggle('active',x.id===b.dataset.tab));
+}));
+['flow','duration','volume','pressure'].forEach(id=>$(id).addEventListener('input',update));
+['tableFlow','tableVolume'].forEach(id=>$(id).addEventListener('change',renderTable));
+$('download').addEventListener('click',csv);
+$('showAll').addEventListener('click',()=>{
+ const q=+$('allFlow').value,t=+$('allDuration').value,v=+$('allVolume').value,p=+$('allPressure').value,r=calc(q,t,v,p);
+ $('allResult').innerHTML=`<strong>${r.percent.toFixed(4)} vol% O₂</strong> (${Math.round(r.ppm).toLocaleString()} ppmv) · ${r.air.toFixed(3)} Nm³ air introduced · ${r.n2.toFixed(3)} Nm³ initial N₂ inventory`;
+});
+setup();update();renderTable();
+</script>
+</body>
+</html>
